@@ -49,7 +49,7 @@ module Eth2Types {
 
     /** The serialisable objects. */
     datatype Serialisable = 
-            Uint8(n: uint8)
+        |   Uint64(n64: uint64)
         |   Bool(b: bool)
         |   Bitlist(xl: seq<bool>)
         |   Bytes32(bs: Seq32Byte)
@@ -72,7 +72,7 @@ module Eth2Types {
      *  and also to prove some lemmas.
      */
     datatype Tipe =
-            Uint8_
+        |   Uint64_
         |   Bool_
         |   Bitlist_
         |   Bytes32_
@@ -87,8 +87,8 @@ module Eth2Types {
     function typeOf(s : Serialisable) : Tipe {
             match s 
                 case Bool(_) => Bool_
-        
-                case Uint8(_) => Uint8_
+
+                case Uint64(_) => Uint64_
 
                 case Bitlist(_) => Bitlist_
 

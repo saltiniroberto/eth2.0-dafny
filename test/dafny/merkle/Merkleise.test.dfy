@@ -44,11 +44,11 @@ include "../../../src/dafny/merkle/Merkleise.dfy"
         var rb := [
             TestItem(
                 "Count chunks for serialised uint8(5) is 1",
-                () => chunkCount(Uint8(5, Uint8_)) == 1 
+                () => chunkCount(Uint64(5)) == 1 
             ),
             TestItem(
                 "Count chunks for serialised bool true is 1",
-                () => chunkCount(Bool(true, Bool_)) == 1 
+                () => chunkCount(Bool(true)) == 1 
             )
         ];
 
@@ -61,7 +61,7 @@ include "../../../src/dafny/merkle/Merkleise.dfy"
          var r2 := [
             TestItem(
                 "Right pad with zeros 127 has size 32",
-                () => |rightPadZeros(serialise(Uint8(127, Uint8_)))| == 32 
+                () => |rightPadZeros(serialise(Uint64(127)))| == 32 
             )
             // TestItem(
             //     "Count chunks for serialised bool true is 1",

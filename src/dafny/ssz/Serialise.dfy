@@ -14,11 +14,14 @@
 
 
 include "../utils/NativeTypes.dfy"
+include "../utils/NonNativeTypes.dfy"
 include "../utils/Eth2Types.dfy"
 include "../utils/Helpers.dfy"
 include "IntSeDes.dfy"
 include "BoolSeDes.dfy"
 include "BitListSeDes.dfy"
+include "../utils/MathHelpers.dfy"
+include "../libraries/integers/power.i.dfy"
 
 /**
  *  SSZ library.
@@ -28,11 +31,15 @@ include "BitListSeDes.dfy"
 module SSZ {
 
     import opened NativeTypes
+    import opened NonNativeTypes
     import opened Eth2Types
     import opened IntSeDes
     import opened BoolSeDes
     import opened BitListSeDes
     import opened Helpers
+    import opened MathHelpers
+    import opened Math__power_i
+    import opened Math__power_s    
 
     /** SizeOf.
      *
@@ -43,12 +50,14 @@ module SSZ {
      *              i.e. uintN or bool.
      */
     function method sizeOf(s: Serialisable): nat
-        requires typeOf(s) in {Uint8_, Bool_}
-        ensures 1 <= sizeOf(s) <= 32 && sizeOf(s) == |serialise(s)|
+        requires typeOf(s) in {Bool_, Uint64_}
+        ensures 1 <= sizeOf(s) <= 32
+        ensures sizeOf(s) == |serialise(s)|
     {
         match s
             case Bool(_) => 1
-            case Uint8(_) => 1  
+
+            case Uint64(_) => 8
     }
 
     /** default.
@@ -58,12 +67,12 @@ module SSZ {
      *
     */
     function method default(t : Tipe) : Serialisable 
-    requires t in {Bool_,Uint8_,Bitlist_,Bytes32_}
+    requires t in {Bool_, Uint64_, Bitlist_,Bytes32_}
     {
             match t 
                 case Bool_ => Bool(false)
-        
-                case Uint8_ => Uint8(0)
+
+                case Uint64_ => Uint64(0)              
 
                 case Bitlist_ => Bitlist([])
 
@@ -76,12 +85,13 @@ module SSZ {
      *  @returns    A sequence of bytes encoding `s`.
      */
     function method serialise(s : Serialisable) : seq<byte> 
-    requires typeOf(s) in {Bool_,Uint8_,Bitlist_,Bytes32_}
+    requires typeOf(s) in {Bool_, Uint64_, Bitlist_, Bytes32_}
     {
         match s
             case Bool(b) => boolToBytes(b)
 
-            case Uint8(n) => uint8ToBytes(n)
+            case Uint64(n) =>   reveal_power();
+                                int_to_bytes(s.n64 as nat, 8)  
 
             case Bitlist(xl) => fromBitlistToBytes(xl)
 
@@ -99,18 +109,18 @@ module SSZ {
      *              that has not been used in the deserialisation as well.
      */
     function method deserialise(xs : seq<byte>, s : Tipe) : Try<Serialisable>
-    requires s in {Bool_,Uint8_,Bitlist_,Bytes32_}
+    requires s in {Bool_, Uint64_, Bitlist_,Bytes32_}
     {
         match s
             case Bool_ => if |xs| == 1 then
                                 Success(Bool(byteToBool(xs[0])))
                             else 
                                 Failure
-                            
-            case Uint8_ => if |xs| == 1 then
-                                Success(Uint8(byteToUint8(xs[0])))
-                             else 
-                                Failure
+
+            case Uint64_ =>   if |xs|  == sizeOf(default(s)) then
+                                Success(Uint64(bytes_to_int(xs) as uint64))
+                            else 
+                                Failure                                                                                                                    
                                 
             case Bitlist_ => if (|xs| >= 1 && xs[|xs| - 1] >= 1) then
                                 Success(Bitlist(fromBytesToBitList(xs)))
@@ -128,7 +138,7 @@ module SSZ {
      * Well typed deserialisation does not fail. 
      */
     lemma wellTypedDoesNotFail(s : Serialisable) 
-        requires typeOf(s) in {Bool_,Uint8_,Bitlist_,Bytes32_}
+    requires typeOf(s) in {Bool_, Uint64_, Bitlist_,Bytes32_}
         ensures deserialise(serialise(s), typeOf(s)) != Failure 
     {   //  Thanks Dafny.
     }
@@ -137,7 +147,7 @@ module SSZ {
      * Deserialise(serialise(-)) = Identity for well typed objects.
      */
     lemma seDesInvolutive(s : Serialisable) 
-        requires typeOf(s) in {Bool_,Uint8_,Bitlist_,Bytes32_}
+        requires typeOf(s) in {Bool_, Uint64_, Bitlist_,Bytes32_}
         ensures deserialise(serialise(s), typeOf(s)) == Success(s) 
         {   //  thanks Dafny.
             match s 
@@ -156,7 +166,8 @@ module SSZ {
 
                 case Bool(_) =>  //  Thanks Dafny
 
-                case Uint8(_) => //  Thanks Dafny
+                case Uint64(n) =>   reveal_power();
+                                    lemmaBytesToIntIsTheInverseOfIntToBytes(s.n64 as nat,8);
 
                 case Bytes32(_) => // Thanks Dafny
             
@@ -166,7 +177,7 @@ module SSZ {
      *  Serialise is injective.
      */
     lemma {:induction s1, s2} serialiseIsInjective(s1: Serialisable, s2 : Serialisable)
-        requires typeOf(s1) in {Bool_,Uint8_,Bitlist_,Bytes32_}
+        requires typeOf(s1) in {Bool_, Uint64_, Bitlist_,Bytes32_}
         ensures typeOf(s1) == typeOf(s2) ==> 
                     serialise(s1) == serialise(s2) ==> s1 == s2 
     {
