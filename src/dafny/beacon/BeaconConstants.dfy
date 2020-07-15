@@ -28,7 +28,7 @@ module BeaconConstants {
     /** The historical roots type.  */
     const EMPTY_HIST_ROOTS := Vector(timeSeq<Bytes32>(EMPTY_BYTES32, SLOTS_PER_HISTORICAL_ROOT as int))
 
-    const EMPTY_BLOCK_HEADER: Serialisable := BeaconBlockHeader(Uint64(0), EMPTY_BYTES32, EMPTY_BYTES32)
+    const EMPTY_BLOCK_HEADER: Serialisable := BeaconBlockHeader(Uint64(0),Uint64(0), EMPTY_BYTES32, EMPTY_BYTES32,EMPTY_BYTES32)
     
     /**
      *  Genesis (initial) beacon state.
@@ -44,9 +44,11 @@ module BeaconConstants {
      *  @note   In this simplified version blocks are same as headers.
      */
     const GENESIS_BLOCK_HEADER: BeaconBlockHeader := BeaconBlockHeader(
+        Uint64(0),
         Uint64(0),  
         EMPTY_BYTES32 , 
-        getHashTreeRootBytes32(GENESIS_STATE)
+        getHashTreeRootBytes32(GENESIS_STATE),
+        EMPTY_BYTES32
     )
 
 }

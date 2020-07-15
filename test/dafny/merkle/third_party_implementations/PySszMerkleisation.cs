@@ -18,6 +18,7 @@ using System.Numerics;
 using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace thirdpartymerkleisation
 {
@@ -243,6 +244,124 @@ namespace thirdpartymerkleisation
                 // Convert the C# byte array containing the data read from the
                 // process stdout to a Dafny sequence of byte
                 return Dafny.Sequence<byte>.FromElements(retBytes);
+        }
+
+        public static Dafny.Sequence<byte> BeaconStateRoot(_13_Eth2Types_Compile.RawSerialisable rawBeaconState)
+        {
+            _13_Eth2Types_Compile.RawSerialisable_BeaconState beaconState = (_13_Eth2Types_Compile.RawSerialisable_BeaconState)rawBeaconState;
+            BigInteger firstSlot = ((_13_Eth2Types_Compile.RawSerialisable_Uint64)beaconState.slot).n;
+            _13_Eth2Types_Compile.RawSerialisable_BeaconBlockHeader beaconBlockHeader = (_13_Eth2Types_Compile.RawSerialisable_BeaconBlockHeader)beaconState.latest__block__header;
+            BigInteger secondSlot = ((_13_Eth2Types_Compile.RawSerialisable_Uint64)beaconBlockHeader.slot).n;
+            IEnumerable<byte>  parent_root = ((_13_Eth2Types_Compile.RawSerialisable_Bytes)beaconBlockHeader.parent__root).bs.Elements;
+            IEnumerable<byte>  state_root = ((_13_Eth2Types_Compile.RawSerialisable_Bytes)beaconBlockHeader.state__root).bs.Elements;
+            IEnumerable<IEnumerable<byte> > block_roots = 
+                from bs in ((Dafny.Sequence<_13_Eth2Types_Compile.RawSerialisable>)((_13_Eth2Types_Compile.RawSerialisable_Vector)beaconState.block__roots).v).Elements
+                select ((_13_Eth2Types_Compile.RawSerialisable_Bytes)bs).bs.Elements;
+
+            IEnumerable<IEnumerable<byte> > state_roots = 
+                from bs in ((Dafny.Sequence<_13_Eth2Types_Compile.RawSerialisable>)((_13_Eth2Types_Compile.RawSerialisable_Vector)beaconState.state__roots).v).Elements
+                select ((_13_Eth2Types_Compile.RawSerialisable_Bytes)bs).bs.Elements;                
+
+            List<String> arguments = new List<String>();
+
+            arguments.Add(firstSlot.ToString());
+
+            arguments.Add(secondSlot.ToString());
+
+            parent_root.ToList().ForEach(b => arguments.Add(b.ToString()));
+
+            state_root.ToList().ForEach(b => arguments.Add(b.ToString()));
+ 
+            block_roots.ToList().ForEach(
+                s => s.ToList().ForEach(
+                    b => arguments.Add(b.ToString())
+                )
+            );
+
+            state_roots.ToList().ForEach(
+                s => s.ToList().ForEach(
+                    b => arguments.Add(b.ToString())
+                )
+            );
+            // Console.WriteLine(_11_Constants_Compile.__default.SLOTS__PER__HISTORICAL__ROOT);
+            // Console.WriteLine(_11_Constants_Compile.__default.TWO__UP__13);
+            // Console.WriteLine(_11_Constants_Compile.__default.TWO__UP__11);
+            // Console.WriteLine(_11_Constants_Compile.__default.TWO__UP__6);
+            // Console.WriteLine(_11_Constants_Compile.__default.TWO__UP__5);
+            // Console.WriteLine(_11_Constants_Compile.__default.TWO__UP__2);
+            // Console.WriteLine(((_13_Eth2Types_Compile.RawSerialisable_Vector)beaconState.block__roots).v.Elements.ToList().Count);
+            // Console.WriteLine(arguments.Count);
+
+            // Set command and command line
+            ProcessStartInfo start = new ProcessStartInfo();
+            start.FileName = "python3";
+            start.Arguments="PySszBeaconStateMerkleisation.py "; // + String.Join(" ",arguments.ToArray());
+
+            String argumentsWithSpaces = String.Join(" ",arguments.ToArray());
+            // using(StreamWriter writer = new StreamWriter("cmd.txt"))
+            // {
+            //     writer.WriteLine(start.Arguments);
+            // }
+
+            // Set redirections for stdout and stdin
+            start.UseShellExecute = false;
+            start.RedirectStandardInput = true;
+            start.RedirectStandardOutput = true;
+            //start.RedirectStandardError = true;
+
+            // Start the process
+            Process cmdProcess = new Process();
+            cmdProcess.StartInfo = start;
+            cmdProcess.Start();   
+
+            var bw = new BinaryWriter(cmdProcess.StandardInput.BaseStream);
+            bw.Write(Encoding.UTF8.GetBytes(argumentsWithSpaces)); 
+            cmdProcess.StandardInput.Close();  
+
+            cmdProcess.WaitForExit();          
+
+            // string output = cmdProcess.StandardOutput.ReadToEnd();
+            // Console.WriteLine(output);
+            // string err = cmdProcess.StandardError.ReadToEnd();
+            // Console.WriteLine(err);
+
+            // cmdProcess.WaitForExit();
+
+            // while (!cmdProcess.StandardOutput.EndOfStream)
+            // {
+            //     string line = cmdProcess.StandardOutput.ReadLine();
+            //     // do something with line
+            // }      
+
+            //arguments.ForEach(Console.WriteLine);   
+
+            
+            // foreach(Dafny.Sequence<byte> s in block_roots)
+            // {
+            //     foreach(byte b in s.Elements)
+            //     {
+            //         arguments.Add(b.ToString());
+            //     }
+            // }
+
+            // Read from the process stdout in binary format and store the
+            // read data in a byte array
+            var br = new BinaryReader(cmdProcess.StandardOutput.BaseStream);
+            byte[] retBytes = br.ReadBytes(32);
+
+            Console.WriteLine(retBytes.Length);
+
+            Console.WriteLine(BitConverter.ToString(retBytes));
+
+            byte[] data = { 1, 2, 4, 8, 16, 32 };
+
+            string hex = BitConverter.ToString(data);
+            Console.WriteLine(hex);
+
+            // Convert the C# byte array containing the data read from the
+            // process stdout to a Dafny sequence of byte
+            return Dafny.Sequence<byte>.FromElements(retBytes);
+            //return Dafny.Sequence<byte>.FromElements(new byte[]{0});   
         }
     }
 }

@@ -68,6 +68,12 @@ module StateTransition {
                     b
                 )
             )
+        // NOTE: The following two conditions should be changed accordingly once the fields
+        // proposer_index and body_root are used in the specification.
+        // For now, these fields have been added to the BeaconBlockHeader constructor merely
+        // to run tests against the PySSZ merkleisation of containers.
+        && b.proposer_index.n == 0
+        && b.body_root == EMPTY_BYTES32
             
     }
 
@@ -250,7 +256,9 @@ module StateTransition {
                 s.(
                 latest_block_header := BeaconBlockHeader(
                     b.slot,
+                    Uint64(0),
                     b.parent_root,
+                    EMPTY_BYTES32,
                     EMPTY_BYTES32
                 )
             )
@@ -276,7 +284,9 @@ module StateTransition {
             s.(
                 latest_block_header := BeaconBlockHeader(
                     b.slot,
+                    Uint64(0),
                     b.parent_root,
+                    EMPTY_BYTES32,
                     EMPTY_BYTES32
                 )
             )
