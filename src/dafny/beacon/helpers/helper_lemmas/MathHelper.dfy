@@ -38,6 +38,51 @@ module MathHelperLemmas {
                                      Math__power_s
 
 
+    lemma LemmaMaxForYDivByX(y:nat,n:nat)
+    requires y > 0;
+    requires (y+1)*(y+1) > n;
+    ensures y + 3 >=n/y;
+    {
+
+        calc ==> {
+            (y+1)*(y+1) > n;
+              calc == {
+                (y+1)*(y+1);
+                y*y + 2*y + 1;
+            }
+            y*y + 2*y + 1 > n;
+            y*(y + 2) + 1 > n;
+            y*(y + 2)  > n - 1;
+                {lemma_div_is_ordered(n - 1,y*(y + 2),y);}
+            y*(y + 2)/y  >= (n - 1)/y;
+                {lemma_fundamental_div_mod_converse(y*(y + 2),y,(y + 2),0);}
+            y + 2  >= (n - 1)/y;
+                {lemma_div_is_ordered(n - y,n-1,y);}
+            y + 2 >= (n-y)/y;
+                {lemma_div_auto(y);}
+            y + 2 >= n/y - 1;
+            y + 3 >= n/y;
+        }
+    } 
+
+    lemma LemmaLoopInvariants(x:nat,n:nat)
+    requires x > 0
+    requires power(x+1,2) > n;
+    ensures var y := (x+n/x)/2; power(x,2) > n as nat <==> y < x
+    ensures var y := (x+n/x)/2; power(y+1,2) > n
+    {
+        var y := (x+n/x)/2;
+        assert power(x,2) > n as nat <==> y < x by 
+        {
+            LemmaYStrictlyLessThanXIff(x,n);
+        }
+
+        assert power(y+1,2) > n as nat by
+        {
+            LemmaSquareYPlusOneGreaterThanX(x,n);
+        }
+    }    
+
     lemma LemmaSquareIsMonotonic(x:nat)
     ensures forall x' | x' > x :: power(x',2) > power(x,2)
     {    
@@ -59,24 +104,6 @@ module MathHelperLemmas {
         else
         {
             LemmaYNatGreaterThanX(x,n);
-        }
-    }
-
-    lemma LemmaLoopInvariants(x:nat,n:nat)
-    requires x > 0
-    requires power(x+1,2) > n;
-    ensures var y := (x+n/x)/2; power(x,2) > n as nat <==> y < x
-    ensures var y := (x+n/x)/2; power(y+1,2) > n
-    {
-        var y := (x+n/x)/2;
-        assert power(x,2) > n as nat <==> y < x by 
-        {
-            LemmaYStrictlyLessThanXIff(x,n);
-        }
-
-        assert power(y+1,2) > n as nat by
-        {
-            LemmaSquareYPlusOneGreaterThanX(x,n);
         }
     }
 
@@ -227,35 +254,7 @@ module MathHelperLemmas {
             >= {lemma_div_auto(x);}
             x; 
         }
-    }   
-
-
-    lemma LemmaMaxForYDivByX(y:nat,n:nat)
-    requires y > 0;
-    requires (y+1)*(y+1) > n;
-    ensures y + 3 >=n/y;
-    {
-
-        calc ==> {
-            (y+1)*(y+1) > n;
-              calc == {
-                (y+1)*(y+1);
-                y*y + 2*y + 1;
-            }
-            y*y + 2*y + 1 > n;
-            y*(y + 2) + 1 > n;
-            y*(y + 2)  > n - 1;
-                {lemma_div_is_ordered(n - 1,y*(y + 2),y);}
-            y*(y + 2)/y  >= (n - 1)/y;
-                {lemma_fundamental_div_mod_converse(y*(y + 2),y,(y + 2),0);}
-            y + 2  >= (n - 1)/y;
-                {lemma_div_is_ordered(n - y,n-1,y);}
-            y + 2 >= (n-y)/y;
-                {lemma_div_auto(y);}
-            y + 2 >= n/y - 1;
-            y + 3 >= n/y;
-        }
-    }     
+    }       
 
 
     lemma LemmaYNatStrictlyLargerThanN(x:nat,n:nat)
