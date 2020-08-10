@@ -2,7 +2,7 @@
 module Math__power_s {
 
 // TODO_MODULE: module Math__power_s {
-function {:opaque} power(b:int, e:nat) : int
+function power(b:int, e:nat) : int
     decreases e;
 {
     if (e==0) then

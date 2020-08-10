@@ -33,14 +33,25 @@ module MathHelperLemmas {
     export MathHelperLemmas provides LemmaYStrictlyLessThanXIff, 
                                      LemmaSquareYPlusOneGreaterThanX, 
                                      LemmaMaxForYDivByX,
+                                     LemmaSquareIsMonotonic,
+                                     LemmaLoopInvariants,
                                      Math__power_s
 
+
+    lemma LemmaSquareIsMonotonic(x:nat)
+    ensures forall x' | x' > x :: power(x',2) > power(x,2)
+    {    
+        forall x' | x' > x
+        ensures power(x',2) > power(x,2)
+        {
+            lemma_power_increases(x+1,x',2);
+        }
+    }
 
     lemma LemmaYStrictlyLessThanXIff(x:nat,n:nat)
     requires x > 0
     ensures  var y:=(x+n/x)/2 ; power(x,2) > n <==> y < x
     {
-        reveal_power();
         if(x*x>n)
         {
             LemmaYNatStrictlyLessThanX(x,n);
@@ -51,12 +62,29 @@ module MathHelperLemmas {
         }
     }
 
+    lemma LemmaLoopInvariants(x:nat,n:nat)
+    requires x > 0
+    requires power(x+1,2) > n;
+    ensures var y := (x+n/x)/2; power(x,2) > n as nat <==> y < x
+    ensures var y := (x+n/x)/2; power(y+1,2) > n
+    {
+        var y := (x+n/x)/2;
+        assert power(x,2) > n as nat <==> y < x by 
+        {
+            LemmaYStrictlyLessThanXIff(x,n);
+        }
+
+        assert power(y+1,2) > n as nat by
+        {
+            LemmaSquareYPlusOneGreaterThanX(x,n);
+        }
+    }
+
     lemma LemmaSquareYPlusOneGreaterThanX(x:nat,n:nat)
     requires x > 0
     requires power(x+1,2)>n
     ensures var y:= (x+n/x)/2; power(y+1,2) > n 
     {
-        reveal_power();
         var y:= NextYNat(x,n);
         if(x*x>n)
         {
